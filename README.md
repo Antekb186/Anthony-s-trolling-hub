@@ -3,52 +3,56 @@ local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
-local char = player.Character or player.CharacterAdded:Wait()
+
+-- Wait for character safely
+local function getChar()
+	return player.Character or player.CharacterAdded:Wait()
+end
+
+local char = getChar()
 local hum = char:WaitForChild("Humanoid")
 local root = char:WaitForChild("HumanoidRootPart")
 
--- States
-local flying, noclip, speedOn = false, false, false
-local dir = Vector3.zero
-local bv, bg
+-- Re-fetch on respawn
+player.CharacterAdded:Connect(function(c)
+	char = c
+	hum = c:WaitForChild("Humanoid")
+	root = c:WaitForChild("HumanoidRootPart")
+end)
 
--- GUI
-local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-gui.Name = "anthonys hub"
+------------------------------------------------
+-- GUI SETUP
+------------------------------------------------
+local gui = Instance.new("ScreenGui")
+gui.Name = "AdminHub"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 320, 0, 380)
-frame.Position = UDim2.new(0.5, -160, 0.5, -190)
-frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
+frame.Size = UDim2.new(0, 300, 0, 360)
+frame.Position = UDim2.new(0.5, -150, 0.5, -180)
+frame.BackgroundColor3 = Color3.fromRGB(35,35,35)
 frame.Active = true
 
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
 
-local stroke = Instance.new("UIStroke", frame)
-stroke.Color = Color3.fromRGB(90,90,90)
-
-local padding = Instance.new("UIPadding", frame)
-padding.PaddingTop = UDim.new(0, 8)
-padding.PaddingBottom = UDim.new(0, 8)
-padding.PaddingLeft = UDim.new(0, 8)
-padding.PaddingRight = UDim.new(0, 8)
-
--- Layout
-local layout = Instance.new("UIListLayout", frame)
-layout.Padding = UDim.new(0, 5)
-
--- Title
+------------------------------------------------
+-- TITLE
+------------------------------------------------
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1,0,0,30)
 title.BackgroundTransparency = 1
-title.Text = "anthonys hub"
+title.Text = "Admin Hub"
+title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
-title.TextColor3 = Color3.new(1,1,1)
 
--- Tabs
+------------------------------------------------
+-- TABS
+------------------------------------------------
 local tabFrame = Instance.new("Frame", frame)
-tabFrame.Size = UDim2.new(1,0,0,35)
+tabFrame.Size = UDim2.new(1,0,0,30)
+tabFrame.Position = UDim2.new(0,0,0,35)
 tabFrame.BackgroundTransparency = 1
 
 local tabLayout = Instance.new("UIListLayout", tabFrame)
@@ -72,17 +76,19 @@ local mainTab = makeTab("Main")
 local settingsTab = makeTab("Settings")
 local statsTab = makeTab("Stats")
 
--- Pages
+------------------------------------------------
+-- PAGES
+------------------------------------------------
 local function makePage()
 	local f = Instance.new("Frame", frame)
-	f.Size = UDim2.new(1,0,1,-90)
-	f.Position = UDim2.new(0,0,0,90)
+	f.Size = UDim2.new(1,0,1,-70)
+	f.Position = UDim2.new(0,0,0,70)
 	f.BackgroundTransparency = 1
 	f.Visible = false
-	
+
 	local l = Instance.new("UIListLayout", f)
-	l.Padding = UDim.new(0,5)
-	
+	l.Padding = UDim.new(0,6)
+
 	return f
 end
 
@@ -103,34 +109,39 @@ statsTab.MouseButton1Click:Connect(function() show(statsPage) end)
 
 show(mainPage)
 
--- Button maker
+------------------------------------------------
+-- BUTTON FUNCTION
+------------------------------------------------
 local function makeBtn(text, parent)
 	local b = Instance.new("TextButton", parent)
-	b.Size = UDim2.new(1,0,0,32)
+	b.Size = UDim2.new(1,0,0,30)
 	b.Text = text
 	b.BackgroundColor3 = Color3.fromRGB(70,70,70)
 	b.TextColor3 = Color3.new(1,1,1)
 	b.Font = Enum.Font.Gotham
 	b.TextSize = 14
-	
 	Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
 	return b
 end
 
--- MAIN
-local flyBtn = makeBtn("Fly: OFF", mainPage)
-local speedBtn = makeBtn("Speed: OFF", mainPage)
-local noclipBtn = makeBtn("Noclip: OFF", mainPage)
+------------------------------------------------
+-- MAIN BUTTONS
+------------------------------------------------
+makeBtn("Fly (placeholder)", mainPage)
+makeBtn("Noclip (placeholder)", mainPage)
+
 local tpBtn = makeBtn("Teleport to Spawn", mainPage)
 
--- SETTINGS
-local redBtn = makeBtn("Red Theme", settingsPage)
-
-redBtn.MouseButton1Click:Connect(function()
-	frame.BackgroundColor3 = Color3.fromRGB(170,60,60)
+tpBtn.MouseButton1Click:Connect(function()
+	local spawn = workspace:FindFirstChildOfClass("SpawnLocation")
+	if spawn and root then
+		root.CFrame = spawn.CFrame + Vector3.new(0,5,0)
+	end
 end)
 
--- WALK SPEED SLIDER (NEW)
+------------------------------------------------
+-- WALK SPEED SLIDER (CLEAN)
+------------------------------------------------
 local sliderLabel = Instance.new("TextLabel", settingsPage)
 sliderLabel.Size = UDim2.new(1,0,0,25)
 sliderLabel.BackgroundTransparency = 1
@@ -139,81 +150,45 @@ sliderLabel.Font = Enum.Font.Gotham
 sliderLabel.TextSize = 14
 sliderLabel.Text = "WalkSpeed: 16"
 
-local sliderFrame = Instance.new("Frame", settingsPage)
-sliderFrame.Size = UDim2.new(1,0,0,20)
-sliderFrame.BackgroundColor3 = Color3.fromRGB(60,60,60)
+local slider = Instance.new("Frame", settingsPage)
+slider.Size = UDim2.new(1,0,0,20)
+slider.BackgroundColor3 = Color3.fromRGB(60,60,60)
+Instance.new("UICorner", slider).CornerRadius = UDim.new(0,6)
 
-Instance.new("UICorner", sliderFrame).CornerRadius = UDim.new(0,6)
-
-local fill = Instance.new("Frame", sliderFrame)
+local fill = Instance.new("Frame", slider)
 fill.Size = UDim2.new(0,0,1,0)
 fill.BackgroundColor3 = Color3.fromRGB(100,200,100)
-
 Instance.new("UICorner", fill).CornerRadius = UDim.new(0,6)
 
-local draggingSlider = false
-local minSpeed = 16
-local maxSpeed = 250
+local dragging = false
+local minSpeed, maxSpeed = 16, 250
 
-local function updateSlider(inputX)
-	local relativeX = math.clamp(
-		(inputX - sliderFrame.AbsolutePosition.X) / sliderFrame.AbsoluteSize.X,
-		0,
-		1
+local function update(x)
+	local rel = math.clamp(
+		(x - slider.AbsolutePosition.X) / slider.AbsoluteSize.X,
+		0, 1
 	)
 
-	fill.Size = UDim2.new(relativeX, 0, 1, 0)
+	fill.Size = UDim2.new(rel,0,1,0)
 
-	local speed = math.floor(minSpeed + (maxSpeed - minSpeed) * relativeX)
-	hum.WalkSpeed = speed
+	local speed = math.floor(minSpeed + (maxSpeed - minSpeed) * rel)
+	if hum then
+		hum.WalkSpeed = speed
+	end
+
 	sliderLabel.Text = "WalkSpeed: "..speed
 end
 
-sliderFrame.InputBegan:Connect(function(input)
+slider.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		draggingSlider = true
-		updateSlider(input.Position.X)
+		dragging = true
+		update(input.Position.X)
 	end
 end)
 
 UIS.InputChanged:Connect(function(input)
-	if draggingSlider and input.UserInputType == Enum.UserInputType.MouseMovement then
-		updateSlider(input.Position.X)
-	end
-end)
-
-UIS.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		draggingSlider = false
-	end
-end)
-
--- STATS
-local stat1 = Instance.new("TextLabel", statsPage)
-stat1.Size = UDim2.new(1,0,0,30)
-stat1.BackgroundTransparency = 1
-stat1.TextColor3 = Color3.new(1,1,1)
-
-local stat2 = stat1:Clone()
-stat2.Parent = statsPage
-
-local stat3 = stat1:Clone()
-stat3.Parent = statsPage
-
-RunService.RenderStepped:Connect(function()
-	stat1.Text = "Players: "..#Players:GetPlayers()
-	stat2.Text = "Place ID: "..game.PlaceId
-	stat3.Text = "Job ID: "..game.JobId
-end)
-
--- DRAG
-local dragging, dragStart, startPos
-
-frame.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		dragStart = input.Position
-		startPos = frame.Position
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		update(input.Position.X)
 	end
 end)
 
@@ -223,8 +198,41 @@ UIS.InputEnded:Connect(function(input)
 	end
 end)
 
+------------------------------------------------
+-- STATS
+------------------------------------------------
+local stats = Instance.new("TextLabel", statsPage)
+stats.Size = UDim2.new(1,0,0,30)
+stats.BackgroundTransparency = 1
+stats.TextColor3 = Color3.new(1,1,1)
+stats.Font = Enum.Font.Gotham
+stats.TextSize = 14
+
+RunService.RenderStepped:Connect(function()
+	stats.Text = "Players: "..#Players:GetPlayers()
+end)
+
+------------------------------------------------
+-- DRAG UI
+------------------------------------------------
+local draggingFrame, dragStart, startPos
+
+frame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingFrame = true
+		dragStart = input.Position
+		startPos = frame.Position
+	end
+end)
+
+UIS.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingFrame = false
+	end
+end)
+
 UIS.InputChanged:Connect(function(input)
-	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+	if draggingFrame and input.UserInputType == Enum.UserInputType.MouseMovement then
 		local delta = input.Position - dragStart
 		frame.Position = UDim2.new(
 			startPos.X.Scale,
@@ -235,96 +243,14 @@ UIS.InputChanged:Connect(function(input)
 	end
 end)
 
--- Toggle GUI
+------------------------------------------------
+-- TOGGLE UI (KEY: 0)
+------------------------------------------------
 UIS.InputBegan:Connect(function(input, gp)
 	if gp then return end
 	if input.KeyCode == Enum.KeyCode.Zero then
 		frame.Visible = not frame.Visible
 	end
 end)
-
--- Fly
-flyBtn.MouseButton1Click:Connect(function()
-	flying = not flying
-	flyBtn.Text = flying and "Fly: ON" or "Fly: OFF"
-	
-	if flying then
-		bv = Instance.new("BodyVelocity", root)
-		bv.MaxForce = Vector3.new(1,1,1)*1e5
-		
-		bg = Instance.new("BodyGyro", root)
-		bg.MaxTorque = Vector3.new(1,1,1)*1e5
-	else
-		if bv then bv:Destroy() end
-		if bg then bg:Destroy() end
-	end
-end)
-
--- Speed toggle (optional)
-speedBtn.MouseButton1Click:Connect(function()
-	speedOn = not speedOn
-	speedBtn.Text = speedOn and "Speed: ON" or "Speed: OFF"
-	
-	if not speedOn then
-		hum.WalkSpeed = 16
-	end
-end)
-
--- Noclip
-noclipBtn.MouseButton1Click:Connect(function()
-	noclip = not noclip
-	noclipBtn.Text = noclip and "Noclip: ON" or "Noclip: OFF"
-end)
-
-RunService.Stepped:Connect(function()
-	if noclip then
-		for _, v in pairs(char:GetDescendants()) do
-			if v:IsA("BasePart") then
-				v.CanCollide = false
-			end
-		end
-	end
-end)
-
--- Teleport
-tpBtn.MouseButton1Click:Connect(function()
-	local spawn = workspace:FindFirstChildOfClass("SpawnLocation")
-	if spawn then
-		root.CFrame = spawn.CFrame + Vector3.new(0,5,0)
-	end
-end)
-
--- Fly movement
-UIS.InputBegan:Connect(function(input)
-	local k = input.KeyCode.Name
-	if k == "W" then dir += Vector3.new(0,0,-1)
-	elseif k == "S" then dir += Vector3.new(0,0,1)
-	elseif k == "A" then dir += Vector3.new(-1,0,0)
-	elseif k == "D" then dir += Vector3.new(1,0,0)
-	elseif k == "Space" then dir += Vector3.new(0,1,0)
-	elseif k == "LeftShift" then dir += Vector3.new(0,-1,0)
-	end
-end)
-
-UIS.InputEnded:Connect(function(input)
-	local k = input.KeyCode.Name
-	if k == "W" then dir -= Vector3.new(0,0,-1)
-	elseif k == "S" then dir -= Vector3.new(0,0,1)
-	elseif k == "A" then dir -= Vector3.new(-1,0,0)
-	elseif k == "D" then dir -= Vector3.new(1,0,0)
-	elseif k == "Space" then dir -= Vector3.new(0,1,0)
-	elseif k == "LeftShift" then dir -= Vector3.new(0,-1,0)
-	end
-end)
-
-RunService.RenderStepped:Connect(function()
-	if flying and bv and bg then
-		local cam = workspace.CurrentCamera
-		local move = cam.CFrame:VectorToWorldSpace(dir)
-		bv.Velocity = move * 50
-		bg.CFrame = cam.CFrame
-	end
-end)
-
 
 (KEEP IN MIND THAT ITS 50% TROLL HUB AND 50% OF ADMIN HUB, SO PLEASE DONT TAKE IT SERIOUSLY AS ONE)
