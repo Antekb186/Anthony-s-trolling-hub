@@ -18,8 +18,8 @@ gui.Name = "Anthony Hub"
 gui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 300, 0, 350)
-frame.Position = UDim2.new(0.5, -150, 0.5, -175)
+frame.Size = UDim2.new(0, 320, 0, 380)
+frame.Position = UDim2.new(0.5, -160, 0.5, -190)
 frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 frame.BackgroundTransparency = 0.4
 frame.Active = true
@@ -53,7 +53,7 @@ UIS.InputChanged:Connect(function(i)
 	end
 end)
 
--- Toggle UI key
+-- Toggle UI
 UIS.InputBegan:Connect(function(i, gp)
 	if gp then return end
 	if i.KeyCode == Enum.KeyCode.Zero then
@@ -93,9 +93,10 @@ local function tab(name)
 end
 
 local mainTab = tab("Main")
-local statsTab = tab("Stats")
 local settingsTab = tab("Settings")
+local statsTab = tab("Stats")
 
+-- Pages
 local function page()
 	local p = Instance.new("Frame", frame)
 	p.Size = UDim2.new(1,0,1,-60)
@@ -110,23 +111,23 @@ local function page()
 end
 
 local mainPage = page()
-local statsPage = page()
 local settingsPage = page()
+local statsPage = page()
 
 local function show(p)
 	mainPage.Visible = false
-	statsPage.Visible = false
 	settingsPage.Visible = false
+	statsPage.Visible = false
 	p.Visible = true
 end
 
 mainTab.MouseButton1Click:Connect(function() show(mainPage) end)
-statsTab.MouseButton1Click:Connect(function() show(statsPage) end)
 settingsTab.MouseButton1Click:Connect(function() show(settingsPage) end)
+statsTab.MouseButton1Click:Connect(function() show(statsPage) end)
 
 show(mainPage)
 
--- Button helper
+-- Button
 local function button(parent, text)
 	local b = Instance.new("TextButton", parent)
 	b.Size = UDim2.new(1,0,0,30)
@@ -139,10 +140,17 @@ local function button(parent, text)
 	return b
 end
 
--- Main buttons
-local flyBtn = button(mainPage, "Fly: OFF")
-local noclipBtn = button(mainPage, "Noclip: OFF")
-local jumpBtn = button(mainPage, "Infinite Jump: OFF")
+-- Main UI
+local container = Instance.new("Frame", mainPage)
+container.Size = UDim2.new(1,0,0,120)
+container.BackgroundTransparency = 1
+
+local list = Instance.new("UIListLayout", container)
+list.Padding = UDim.new(0,5)
+
+local flyBtn = button(container, "Fly: OFF")
+local noclipBtn = button(container, "Noclip: OFF")
+local jumpBtn = button(container, "Infinite Jump: OFF")
 
 -- Stats
 local stat1 = Instance.new("TextLabel", statsPage)
@@ -240,3 +248,24 @@ RunService.RenderStepped:Connect(function()
 		bg.CFrame = cam.CFrame
 	end
 end)
+
+-- Rainbow Color Wheel
+local function addColorWheel(parent)
+	local wheel = Instance.new("ImageButton", parent)
+	wheel.Size = UDim2.new(0,120,0,120)
+	wheel.BackgroundTransparency = 1
+	wheel.Image = "rbxassetid://6020299385"
+
+	wheel.MouseButton1Down:Connect(function(x,y)
+		local pos = Vector2.new(x,y)
+		local center = wheel.AbsolutePosition + wheel.AbsoluteSize/2
+		local delta = pos - center
+
+		local angle = math.atan2(delta.Y, delta.X)
+		local hue = (angle/(2*math.pi))+0.5
+
+		frame.BackgroundColor3 = Color3.fromHSV(hue,1,1)
+	end)
+end
+
+addColorWheel(settingsPage)
