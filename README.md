@@ -4,26 +4,14 @@ local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 
-local function getChar()
-	return player.Character or player.CharacterAdded:Wait()
-end
-
-local char = getChar()
-local hum = char:WaitForChild("Humanoid")
-
-player.CharacterAdded:Connect(function(c)
-	char = c
-	hum = c:WaitForChild("Humanoid")
-end)
-
 local gui = Instance.new("ScreenGui")
-gui.Name = "CustomHub"
+gui.Name = "CleanUI"
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 320, 0, 420)
-frame.Position = UDim2.new(0.5, -160, 0.5, -210)
+frame.Size = UDim2.new(0, 320, 0, 400)
+frame.Position = UDim2.new(0.5, -160, 0.5, -200)
 frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
 frame.BackgroundTransparency = 0.4
 frame.Active = true
@@ -70,78 +58,32 @@ end)
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1,0,0,30)
 title.BackgroundTransparency = 1
-title.Text = "Custom Hub"
+title.Text = "Clean UI"
 title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
 
-local tabFrame = Instance.new("Frame", frame)
-tabFrame.Size = UDim2.new(1,0,0,35)
-tabFrame.BackgroundTransparency = 1
-
-local tabLayout = Instance.new("UIListLayout", tabFrame)
-tabLayout.FillDirection = Enum.FillDirection.Horizontal
-tabLayout.Padding = UDim.new(0,5)
-
-local function makeTab(text)
-	local b = Instance.new("TextButton", tabFrame)
-	b.Size = UDim2.new(0.33,0,1,0)
-	b.Text = text
-	b.BackgroundColor3 = Color3.fromRGB(60,60,60)
-	b.TextColor3 = Color3.new(1,1,1)
-	b.Font = Enum.Font.Gotham
-	b.TextSize = 14
-	Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
-	return b
+local function makeLabel(parent, text)
+	local l = Instance.new("TextLabel", parent)
+	l.Size = UDim2.new(1,0,0,25)
+	l.BackgroundTransparency = 1
+	l.TextColor3 = Color3.new(1,1,1)
+	l.Font = Enum.Font.Gotham
+	l.TextSize = 14
+	l.Text = text
+	return l
 end
 
-local mainTab = makeTab("Main")
-local settingsTab = makeTab("Settings")
-local statsTab = makeTab("Stats")
+local statPlayers = makeLabel(frame, "")
+local statJob = makeLabel(frame, "")
 
-local function makePage()
-	local f = Instance.new("Frame", frame)
-	f.Size = UDim2.new(1,0,1,-90)
-	f.BackgroundTransparency = 1
-	f.Visible = false
-	
-	local l = Instance.new("UIListLayout", f)
-	l.Padding = UDim.new(0,5)
-	
-	return f
-end
+RunService.RenderStepped:Connect(function()
+	statPlayers.Text = "Players: "..#Players:GetPlayers()
+	statJob.Text = "Job ID: "..game.JobId
+end)
 
-local mainPage = makePage()
-local settingsPage = makePage()
-local statsPage = makePage()
-
-local function show(page)
-	mainPage.Visible = false
-	settingsPage.Visible = false
-	statsPage.Visible = false
-	page.Visible = true
-end
-
-mainTab.MouseButton1Click:Connect(function() show(mainPage) end)
-settingsTab.MouseButton1Click:Connect(function() show(settingsPage) end)
-statsTab.MouseButton1Click:Connect(function() show(statsPage) end)
-
-show(mainPage)
-
-local function makeBtn(text, parent)
-	local b = Instance.new("TextButton", parent)
-	b.Size = UDim2.new(1,0,0,30)
-	b.Text = text
-	b.BackgroundColor3 = Color3.fromRGB(70,70,70)
-	b.TextColor3 = Color3.new(1,1,1)
-	b.Font = Enum.Font.Gotham
-	b.TextSize = 14
-	Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
-	return b
-end
-
-local function makeSlider(parent, name, min, max, default, callback)
-	local container = Instance.new("Frame", parent)
+local function makeSlider(name, min, max, default, callback)
+	local container = Instance.new("Frame", frame)
 	container.Size = UDim2.new(1,0,0,45)
 	container.BackgroundTransparency = 1
 
@@ -149,8 +91,6 @@ local function makeSlider(parent, name, min, max, default, callback)
 	label.Size = UDim2.new(1,0,0,20)
 	label.BackgroundTransparency = 1
 	label.TextColor3 = Color3.new(1,1,1)
-	label.Font = Enum.Font.Gotham
-	label.TextSize = 14
 	label.Text = name..": "..default
 
 	local bar = Instance.new("Frame", container)
@@ -195,8 +135,15 @@ local function makeSlider(parent, name, min, max, default, callback)
 	end)
 end
 
-local function makeColorPicker(parent, callback)
-	local bar = Instance.new("Frame", parent)
+makeSlider("WalkSpeed", 16, 250, 16, function(v)
+	local char = player.Character
+	if char and char:FindFirstChild("Humanoid") then
+		char.Humanoid.WalkSpeed = v
+	end
+end)
+
+local function makeColorPicker(callback)
+	local bar = Instance.new("Frame", frame)
 	bar.Size = UDim2.new(1,0,0,20)
 	bar.BackgroundTransparency = 1
 
@@ -208,12 +155,11 @@ local function makeColorPicker(parent, callback)
 	local grad = Instance.new("UIGradient", bg)
 	grad.Color = ColorSequence.new({
 		ColorSequenceKeypoint.new(0, Color3.fromRGB(255,0,0)),
-		ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255,255,0)),
-		ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0,255,0)),
-		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0,255,255)),
-		ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0,0,255)),
-		ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255,0,255)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(255,0,0))
+		ColorSequenceKeypoint.new(0.2, Color3.fromRGB(255,255,0)),
+		ColorSequenceKeypoint.new(0.4, Color3.fromRGB(0,255,0)),
+		ColorSequenceKeypoint.new(0.6, Color3.fromRGB(0,255,255)),
+		ColorSequenceKeypoint.new(0.8, Color3.fromRGB(0,0,255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(255,0,255))
 	})
 
 	local dragging = false
@@ -244,30 +190,6 @@ local function makeColorPicker(parent, callback)
 	end)
 end
 
-makeBtn("Fly: OFF", mainPage)
-makeBtn("Noclip: OFF", mainPage)
-makeBtn("Infinite Jump: OFF", mainPage)
-
-makeSlider(mainPage, "WalkSpeed", 16, 250, 16, function(v)
-	if hum then hum.WalkSpeed = v end
-end)
-
-makeSlider(mainPage, "Fly Speed", 16, 250, 50, function(v)
-end)
-
-makeColorPicker(settingsPage, function(color)
+makeColorPicker(function(color)
 	frame.BackgroundColor3 = color
 end)
-
-local stat1 = Instance.new("TextLabel", statsPage)
-stat1.Size = UDim2.new(1,0,0,25)
-stat1.BackgroundTransparency = 1
-stat1.TextColor3 = Color3.new(1,1,1)
-stat1.Font = Enum.Font.Gotham
-stat1.TextSize = 14
-
-RunService.RenderStepped:Connect(function()
-	stat1.Text = "Players: "..#Players:GetPlayers().." | JobId: "..game.JobId
-end)
-
-(KEEP IN MIND THAT ITS 50% TROLL HUB AND 50% OF ADMIN HUB, SO PLEASE DONT TAKE IT SERIOUSLY AS ONE)
