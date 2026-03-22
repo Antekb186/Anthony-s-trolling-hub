@@ -22,15 +22,18 @@ local flying, noclip = false, false
 local dir = Vector3.zero
 local bv, bg
 
+local flySpeed = 50
+
 local gui = Instance.new("ScreenGui")
 gui.Name = "AdminHub"
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 300, 0, 360)
+frame.Size = UDim2.new(0, 300, 0, 380)
 frame.Position = UDim2.new(0.5, -150, 0.5, -180)
 frame.BackgroundColor3 = Color3.fromRGB(35,35,35)
+frame.BackgroundTransparency = 0.6
 frame.Active = true
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
 
@@ -111,52 +114,62 @@ end
 local flyBtn = makeBtn("Fly: OFF", mainPage)
 local noclipBtn = makeBtn("Noclip: OFF", mainPage)
 
-local sliderLabel = Instance.new("TextLabel", settingsPage)
-sliderLabel.Size = UDim2.new(1,0,0,25)
-sliderLabel.BackgroundTransparency = 1
-sliderLabel.TextColor3 = Color3.new(1,1,1)
-sliderLabel.Font = Enum.Font.Gotham
-sliderLabel.TextSize = 14
-sliderLabel.Text = "WalkSpeed: 16"
+local function createSlider(parent, labelText, min, max, default, callback)
+	local label = Instance.new("TextLabel", parent)
+	label.Size = UDim2.new(1,0,0,25)
+	label.BackgroundTransparency = 1
+	label.TextColor3 = Color3.new(1,1,1)
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 14
+	label.Text = labelText..": "..default
 
-local slider = Instance.new("Frame", settingsPage)
-slider.Size = UDim2.new(1,0,0,20)
-slider.BackgroundColor3 = Color3.fromRGB(60,60,60)
-Instance.new("UICorner", slider).CornerRadius = UDim.new(0,6)
+	local slider = Instance.new("Frame", parent)
+	slider.Size = UDim2.new(1,0,0,20)
+	slider.BackgroundColor3 = Color3.fromRGB(60,60,60)
+	Instance.new("UICorner", slider).CornerRadius = UDim.new(0,6)
 
-local fill = Instance.new("Frame", slider)
-fill.Size = UDim2.new(0,0,1,0)
-fill.BackgroundColor3 = Color3.fromRGB(100,200,100)
-Instance.new("UICorner", fill).CornerRadius = UDim.new(0,6)
+	local fill = Instance.new("Frame", slider)
+	fill.Size = UDim2.new((default - min)/(max - min),0,1,0)
+	fill.BackgroundColor3 = Color3.fromRGB(100,200,100)
+	Instance.new("UICorner", fill).CornerRadius = UDim.new(0,6)
 
-local dragging = false
-local minSpeed, maxSpeed = 16, 250
+	local dragging = false
 
-local function updateSlider(x)
-	local rel = math.clamp((x - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
-	fill.Size = UDim2.new(rel,0,1,0)
-	local speed = math.floor(minSpeed + (maxSpeed - minSpeed) * rel)
-	if hum then hum.WalkSpeed = speed end
-	sliderLabel.Text = "WalkSpeed: "..speed
+	local function update(x)
+		local rel = math.clamp((x - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
+		fill.Size = UDim2.new(rel,0,1,0)
+
+		local value = math.floor(min + (max - min) * rel)
+		label.Text = labelText..": "..value
+		callback(value)
+	end
+
+	slider.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			update(input.Position.X)
+		end
+	end)
+
+	UIS.InputChanged:Connect(function(input)
+		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+			update(input.Position.X)
+		end
+	end)
+
+	UIS.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = false
+		end
+	end)
 end
 
-slider.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		updateSlider(input.Position.X)
-	end
+createSlider(settingsPage, "WalkSpeed", 16, 250, 16, function(v)
+	if hum then hum.WalkSpeed = v end
 end)
 
-UIS.InputChanged:Connect(function(input)
-	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-		updateSlider(input.Position.X)
-	end
-end)
-
-UIS.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = false
-	end
+createSlider(settingsPage, "Fly Speed", 16, 250, 50, function(v)
+	flySpeed = v
 end)
 
 local stats = Instance.new("TextLabel", statsPage)
@@ -176,10 +189,10 @@ flyBtn.MouseButton1Click:Connect(function()
 
 	if flying then
 		bv = Instance.new("BodyVelocity", root)
-		bv.MaxForce = Vector3.new(1,1,1) * 1e5
+		bv.MaxForce = Vector3.new(1,1,1)*1e5
 
 		bg = Instance.new("BodyGyro", root)
-		bg.MaxTorque = Vector3.new(1,1,1) * 1e5
+		bg.MaxTorque = Vector3.new(1,1,1)*1e5
 	else
 		if bv then bv:Destroy() end
 		if bg then bg:Destroy() end
@@ -227,7 +240,7 @@ RunService.RenderStepped:Connect(function()
 	if flying and bv and bg then
 		local cam = workspace.CurrentCamera
 		local move = cam.CFrame:VectorToWorldSpace(dir)
-		bv.Velocity = move * 50
+		bv.Velocity = move * flySpeed
 		bg.CFrame = cam.CFrame
 	end
 end)
