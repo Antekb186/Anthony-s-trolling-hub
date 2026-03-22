@@ -18,6 +18,10 @@ player.CharacterAdded:Connect(function(c)
 	root = c:WaitForChild("HumanoidRootPart")
 end)
 
+local flying, noclip = false, false
+local dir = Vector3.zero
+local bv, bg
+
 local gui = Instance.new("ScreenGui")
 gui.Name = "AdminHub"
 gui.ResetOnSpawn = false
@@ -43,9 +47,9 @@ tabFrame.Size = UDim2.new(1,0,0,30)
 tabFrame.Position = UDim2.new(0,0,0,35)
 tabFrame.BackgroundTransparency = 1
 
-local layout = Instance.new("UIListLayout", tabFrame)
-layout.FillDirection = Enum.FillDirection.Horizontal
-layout.Padding = UDim.new(0,5)
+local tabLayout = Instance.new("UIListLayout", tabFrame)
+tabLayout.FillDirection = Enum.FillDirection.Horizontal
+tabLayout.Padding = UDim.new(0,5)
 
 local function makeTab(name)
 	local b = Instance.new("TextButton")
@@ -70,10 +74,8 @@ local function makePage()
 	f.Position = UDim2.new(0,0,0,70)
 	f.BackgroundTransparency = 1
 	f.Visible = false
-
 	local l = Instance.new("UIListLayout", f)
 	l.Padding = UDim.new(0,6)
-
 	return f
 end
 
@@ -106,14 +108,8 @@ local function makeBtn(text, parent)
 	return b
 end
 
-local tpBtn = makeBtn("Teleport to Spawn", mainPage)
-
-tpBtn.MouseButton1Click:Connect(function()
-	local spawn = workspace:FindFirstChildOfClass("SpawnLocation")
-	if spawn and root then
-		root.CFrame = spawn.CFrame + Vector3.new(0,5,0)
-	end
-end)
+local flyBtn = makeBtn("Fly: OFF", mainPage)
+local noclipBtn = makeBtn("Noclip: OFF", mainPage)
 
 local sliderLabel = Instance.new("TextLabel", settingsPage)
 sliderLabel.Size = UDim2.new(1,0,0,25)
@@ -136,26 +132,24 @@ Instance.new("UICorner", fill).CornerRadius = UDim.new(0,6)
 local dragging = false
 local minSpeed, maxSpeed = 16, 250
 
-local function update(x)
+local function updateSlider(x)
 	local rel = math.clamp((x - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
 	fill.Size = UDim2.new(rel,0,1,0)
-
 	local speed = math.floor(minSpeed + (maxSpeed - minSpeed) * rel)
 	if hum then hum.WalkSpeed = speed end
-
 	sliderLabel.Text = "WalkSpeed: "..speed
 end
 
 slider.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
 		dragging = true
-		update(input.Position.X)
+		updateSlider(input.Position.X)
 	end
 end)
 
 UIS.InputChanged:Connect(function(input)
 	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-		update(input.Position.X)
+		updateSlider(input.Position.X)
 	end
 end)
 
@@ -176,31 +170,65 @@ RunService.RenderStepped:Connect(function()
 	stats.Text = "Players: "..#Players:GetPlayers()
 end)
 
-local draggingFrame, dragStart, startPos
+flyBtn.MouseButton1Click:Connect(function()
+	flying = not flying
+	flyBtn.Text = flying and "Fly: ON" or "Fly: OFF"
 
-frame.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		draggingFrame = true
-		dragStart = input.Position
-		startPos = frame.Position
+	if flying then
+		bv = Instance.new("BodyVelocity", root)
+		bv.MaxForce = Vector3.new(1,1,1) * 1e5
+
+		bg = Instance.new("BodyGyro", root)
+		bg.MaxTorque = Vector3.new(1,1,1) * 1e5
+	else
+		if bv then bv:Destroy() end
+		if bg then bg:Destroy() end
+	end
+end)
+
+noclipBtn.MouseButton1Click:Connect(function()
+	noclip = not noclip
+	noclipBtn.Text = noclip and "Noclip: ON" or "Noclip: OFF"
+end)
+
+RunService.Stepped:Connect(function()
+	if noclip then
+		for _, v in pairs(char:GetDescendants()) do
+			if v:IsA("BasePart") then
+				v.CanCollide = false
+			end
+		end
+	end
+end)
+
+UIS.InputBegan:Connect(function(input)
+	local k = input.KeyCode.Name
+	if k == "W" then dir += Vector3.new(0,0,-1)
+	elseif k == "S" then dir += Vector3.new(0,0,1)
+	elseif k == "A" then dir += Vector3.new(-1,0,0)
+	elseif k == "D" then dir += Vector3.new(1,0,0)
+	elseif k == "Space" then dir += Vector3.new(0,1,0)
+	elseif k == "LeftShift" then dir += Vector3.new(0,-1,0)
 	end
 end)
 
 UIS.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		draggingFrame = false
+	local k = input.KeyCode.Name
+	if k == "W" then dir -= Vector3.new(0,0,-1)
+	elseif k == "S" then dir -= Vector3.new(0,0,1)
+	elseif k == "A" then dir -= Vector3.new(-1,0,0)
+	elseif k == "D" then dir -= Vector3.new(1,0,0)
+	elseif k == "Space" then dir -= Vector3.new(0,1,0)
+	elseif k == "LeftShift" then dir -= Vector3.new(0,-1,0)
 	end
 end)
 
-UIS.InputChanged:Connect(function(input)
-	if draggingFrame and input.UserInputType == Enum.UserInputType.MouseMovement then
-		local delta = input.Position - dragStart
-		frame.Position = UDim2.new(
-			startPos.X.Scale,
-			startPos.X.Offset + delta.X,
-			startPos.Y.Scale,
-			startPos.Y.Offset + delta.Y
-		)
+RunService.RenderStepped:Connect(function()
+	if flying and bv and bg then
+		local cam = workspace.CurrentCamera
+		local move = cam.CFrame:VectorToWorldSpace(dir)
+		bv.Velocity = move * 50
+		bg.CFrame = cam.CFrame
 	end
 end)
 
