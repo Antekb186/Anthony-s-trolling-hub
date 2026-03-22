@@ -36,6 +36,46 @@ frame.BackgroundTransparency = 0.4
 frame.Active = true
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
 
+-- DRAG (clean + fixed)
+local dragging = false
+local dragStart
+local startPos
+
+frame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+	end
+end)
+
+UIS.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+		frame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+-- TOGGLE UI
+UIS.InputBegan:Connect(function(input, gp)
+	if gp then return end
+	if input.KeyCode == Enum.KeyCode.Zero then
+		frame.Visible = not frame.Visible
+	end
+end)
+
+-- TITLE
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1,0,0,30)
 title.BackgroundTransparency = 1
@@ -44,6 +84,7 @@ title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
 
+-- TAB SYSTEM
 local tabFrame = Instance.new("Frame", frame)
 tabFrame.Size = UDim2.new(1,0,0,30)
 tabFrame.Position = UDim2.new(0,0,0,35)
@@ -98,6 +139,7 @@ statsTab.MouseButton1Click:Connect(function() show(statsPage) end)
 
 show(mainPage)
 
+-- BUTTON
 local function makeBtn(text, parent)
 	local b = Instance.new("TextButton", parent)
 	b.Size = UDim2.new(1,0,0,30)
@@ -113,37 +155,38 @@ end
 local flyBtn = makeBtn("Fly: OFF", mainPage)
 local noclipBtn = makeBtn("Noclip: OFF", mainPage)
 
-local function createSlider(parent, labelText, min, max, default, callback)
+-- SLIDER SYSTEM
+local function createSlider(parent, name, min, max, default, callback)
 	local label = Instance.new("TextLabel", parent)
-	label.Size = UDim2.new(1,0,0,25)
+	label.Size = UDim2.new(1,0,0,20)
 	label.BackgroundTransparency = 1
 	label.TextColor3 = Color3.new(1,1,1)
 	label.Font = Enum.Font.Gotham
 	label.TextSize = 14
-	label.Text = labelText..": "..default
+	label.Text = name..": "..default
 
-	local slider = Instance.new("Frame", parent)
-	slider.Size = UDim2.new(1,0,0,20)
-	slider.BackgroundColor3 = Color3.fromRGB(60,60,60)
-	Instance.new("UICorner", slider).CornerRadius = UDim.new(0,6)
+	local bar = Instance.new("Frame", parent)
+	bar.Size = UDim2.new(1,0,0,18)
+	bar.BackgroundColor3 = Color3.fromRGB(60,60,60)
+	Instance.new("UICorner", bar).CornerRadius = UDim.new(0,6)
 
-	local fill = Instance.new("Frame", slider)
-	fill.Size = UDim2.new((default - min)/(max - min),0,1,0)
+	local fill = Instance.new("Frame", bar)
+	fill.Size = UDim2.new((default-min)/(max-min),0,1,0)
 	fill.BackgroundColor3 = Color3.fromRGB(100,200,100)
 	Instance.new("UICorner", fill).CornerRadius = UDim.new(0,6)
 
 	local dragging = false
 
 	local function update(x)
-		local rel = math.clamp((x - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
+		local rel = math.clamp((x - bar.AbsolutePosition.X)/bar.AbsoluteSize.X, 0,1)
 		fill.Size = UDim2.new(rel,0,1,0)
 
-		local value = math.floor(min + (max - min) * rel)
-		label.Text = labelText..": "..value
+		local value = math.floor(min + (max-min)*rel)
+		label.Text = name..": "..value
 		callback(value)
 	end
 
-	slider.InputBegan:Connect(function(input)
+	bar.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
 			dragging = true
 			update(input.Position.X)
@@ -171,6 +214,7 @@ createSlider(settingsPage, "Fly Speed", 16, 250, 50, function(v)
 	flySpeed = v
 end)
 
+-- STATS
 local stats = Instance.new("TextLabel", statsPage)
 stats.Size = UDim2.new(1,0,0,30)
 stats.BackgroundTransparency = 1
@@ -182,6 +226,7 @@ RunService.RenderStepped:Connect(function()
 	stats.Text = "Players: "..#Players:GetPlayers()
 end)
 
+-- FLY
 flyBtn.MouseButton1Click:Connect(function()
 	flying = not flying
 	flyBtn.Text = flying and "Fly: ON" or "Fly: OFF"
@@ -198,6 +243,7 @@ flyBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
+-- NOCLIP
 noclipBtn.MouseButton1Click:Connect(function()
 	noclip = not noclip
 	noclipBtn.Text = noclip and "Noclip: ON" or "Noclip: OFF"
@@ -213,6 +259,7 @@ RunService.Stepped:Connect(function()
 	end
 end)
 
+-- MOVEMENT
 UIS.InputBegan:Connect(function(input)
 	local k = input.KeyCode.Name
 	if k == "W" then dir += Vector3.new(0,0,-1)
@@ -241,13 +288,6 @@ RunService.RenderStepped:Connect(function()
 		local move = cam.CFrame:VectorToWorldSpace(dir)
 		bv.Velocity = move * flySpeed
 		bg.CFrame = cam.CFrame
-	end
-end)
-
-UIS.InputBegan:Connect(function(input, gp)
-	if gp then return end
-	if input.KeyCode == Enum.KeyCode.Zero then
-		frame.Visible = not frame.Visible
 	end
 end)
 
