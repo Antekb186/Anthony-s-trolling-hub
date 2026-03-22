@@ -267,3 +267,64 @@ end
 updatePlayers()
 Players.PlayerAdded:Connect(updatePlayers)
 Players.PlayerRemoving:Connect(updatePlayers)
+
+local function createInspectorTool()
+	local tool = Instance.new("Tool")
+	tool.Name = "Inspector"
+	tool.RequiresHandle = false
+
+	local mouse = player:GetMouse()
+
+	local gui = Instance.new("ScreenGui")
+	local label = Instance.new("TextLabel", gui)
+	label.Size = UDim2.new(0,300,0,120)
+	label.Position = UDim2.new(0,10,0,10)
+	label.BackgroundColor3 = Color3.fromRGB(30,30,30)
+	label.BackgroundTransparency = 0.3
+	label.TextColor3 = Color3.new(1,1,1)
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 14
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.TextYAlignment = Enum.TextYAlignment.Top
+
+	local conn
+
+	tool.Equipped:Connect(function()
+		gui.Parent = player.PlayerGui
+		conn = RunService.RenderStepped:Connect(function()
+			local t = mouse.Target
+			if t then
+				local p = t.Position
+				local c = t.Color
+				label.Text =
+					"Name: "..t.Name..
+					"\nClass: "..t.ClassName..
+					"\nPos: "..math.floor(p.X)..","..math.floor(p.Y)..","..math.floor(p.Z)..
+					"\nColor: "..math.floor(c.R*255)..","..math.floor(c.G*255)..","..math.floor(c.B*255)..
+					"\nMaterial: "..tostring(t.Material)..
+					"\nCanCollide: "..tostring(t.CanCollide)
+			else
+				label.Text = "No target"
+			end
+		end)
+	end)
+
+	tool.Unequipped:Connect(function()
+		gui.Parent = nil
+		if conn then conn:Disconnect() end
+	end)
+
+	return tool
+end
+
+local inspectorBtn = Instance.new("TextButton", stats)
+inspectorBtn.Size = UDim2.new(1,0,0,30)
+inspectorBtn.Text = "Get Inspector Tool"
+inspectorBtn.BackgroundColor3 = Color3.fromRGB(70,70,70)
+inspectorBtn.TextColor3 = Color3.new(1,1,1)
+inspectorBtn.Font = Enum.Font.Gotham
+inspectorBtn.TextSize = 14
+
+inspectorBtn.MouseButton1Click:Connect(function()
+	createInspectorTool().Parent = player.Backpack
+end)
