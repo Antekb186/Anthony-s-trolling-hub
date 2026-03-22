@@ -1,28 +1,31 @@
-local player = game.Players.LocalPlayer
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
 local hum = char:WaitForChild("Humanoid")
 local root = char:WaitForChild("HumanoidRootPart")
 
-local UIS = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-
-local flying, noclip, killAura, speedBoost, tpMode = false, false, false, false, false
+-- States
+local flying, noclip, speedOn = false, false, false
 local dir = Vector3.zero
 local bv, bg
 
 -- GUI
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.Name = "anthonys hub"
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 220, 0, 280)
-frame.Position = UDim2.new(0.5, -110, 0.5, -140)
+frame.Size = UDim2.new(0, 320, 0, 380)
+frame.Position = UDim2.new(0.5, -160, 0.5, -190)
 frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
 frame.Active = true
 
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
 
 local stroke = Instance.new("UIStroke", frame)
-stroke.Color = Color3.fromRGB(80,80,80)
+stroke.Color = Color3.fromRGB(90,90,90)
 
 local padding = Instance.new("UIPadding", frame)
 padding.PaddingTop = UDim.new(0, 8)
@@ -30,6 +33,7 @@ padding.PaddingBottom = UDim.new(0, 8)
 padding.PaddingLeft = UDim.new(0, 8)
 padding.PaddingRight = UDim.new(0, 8)
 
+-- Layout
 local layout = Instance.new("UIListLayout", frame)
 layout.Padding = UDim.new(0, 5)
 
@@ -37,78 +41,144 @@ layout.Padding = UDim.new(0, 5)
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1,0,0,30)
 title.BackgroundTransparency = 1
-title.Text = "anthonys troll hub"
+title.Text = "anthonys hub"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
 title.TextColor3 = Color3.new(1,1,1)
 
--- Button maker
-local function makeBtn(text)
+-- Tabs
+local tabFrame = Instance.new("Frame", frame)
+tabFrame.Size = UDim2.new(1,0,0,35)
+tabFrame.BackgroundTransparency = 1
+
+local tabLayout = Instance.new("UIListLayout", tabFrame)
+tabLayout.FillDirection = Enum.FillDirection.Horizontal
+tabLayout.Padding = UDim.new(0,5)
+
+local function makeTab(name)
 	local b = Instance.new("TextButton")
-	b.Size = UDim2.new(1,0,0,32)
-	b.Text = text
+	b.Size = UDim2.new(0.33,0,1,0)
+	b.Text = name
 	b.BackgroundColor3 = Color3.fromRGB(60,60,60)
 	b.TextColor3 = Color3.new(1,1,1)
 	b.Font = Enum.Font.Gotham
 	b.TextSize = 14
-	
-	Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
-	b.Parent = frame
+	Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
+	b.Parent = tabFrame
 	return b
 end
 
--- Buttons
-local flyBtn = makeBtn("Fly: OFF")
-local speedBtn = makeBtn("Speed: OFF")
-local noclipBtn = makeBtn("Noclip: OFF")
-local killBtn = makeBtn("Kill Aura: OFF")
-local tpBtn = makeBtn("Teleport: OFF")
+local mainTab = makeTab("Main")
+local settingsTab = makeTab("Settings")
+local statsTab = makeTab("Stats")
 
--- Settings button
-local settingsBtn = makeBtn("Additional Settings")
+-- Pages
+local function makePage()
+	local f = Instance.new("Frame", frame)
+	f.Size = UDim2.new(1,0,1,-90)
+	f.Position = UDim2.new(0,0,0,90)
+	f.BackgroundTransparency = 1
+	f.Visible = false
+	
+	local l = Instance.new("UIListLayout", f)
+	l.Padding = UDim.new(0,5)
+	
+	return f
+end
 
--- Settings panel
-local settingsFrame = Instance.new("Frame", gui)
-settingsFrame.Size = UDim2.new(0, 180, 0, 140)
-settingsFrame.Position = UDim2.new(0.5, 130, 0.5, -70)
-settingsFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
-settingsFrame.Visible = false
+local mainPage = makePage()
+local settingsPage = makePage()
+local statsPage = makePage()
 
-Instance.new("UICorner", settingsFrame).CornerRadius = UDim.new(0, 8)
+local function show(page)
+	mainPage.Visible = false
+	settingsPage.Visible = false
+	statsPage.Visible = false
+	page.Visible = true
+end
 
-local settingsLayout = Instance.new("UIListLayout", settingsFrame)
+mainTab.MouseButton1Click:Connect(function() show(mainPage) end)
+settingsTab.MouseButton1Click:Connect(function() show(settingsPage) end)
+statsTab.MouseButton1Click:Connect(function() show(statsPage) end)
 
--- Color changer
-local function addColor(name, color)
-	local b = Instance.new("TextButton", settingsFrame)
-	b.Size = UDim2.new(1,0,0,30)
-	b.Text = name
-	b.BackgroundColor3 = color
+show(mainPage)
+
+-- Button maker
+local function makeBtn(text, parent)
+	local b = Instance.new("TextButton", parent)
+	b.Size = UDim2.new(1,0,0,32)
+	b.Text = text
+	b.BackgroundColor3 = Color3.fromRGB(70,70,70)
 	b.TextColor3 = Color3.new(1,1,1)
 	b.Font = Enum.Font.Gotham
 	b.TextSize = 14
 	
-	Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
-	
-	b.MouseButton1Click:Connect(function()
-		frame.BackgroundColor3 = color
-	end)
+	Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
+	return b
 end
 
-addColor("Red", Color3.fromRGB(170,60,60))
-addColor("Blue", Color3.fromRGB(60,100,200))
-addColor("Green", Color3.fromRGB(60,170,90))
-addColor("Dark", Color3.fromRGB(40,40,40))
+-- MAIN
+local flyBtn = makeBtn("Fly: OFF", mainPage)
+local speedBtn = makeBtn("Speed: OFF", mainPage)
+local noclipBtn = makeBtn("Noclip: OFF", mainPage)
+local tpBtn = makeBtn("Teleport to Spawn", mainPage)
 
--- Toggle settings panel
-settingsBtn.MouseButton1Click:Connect(function()
-	settingsFrame.Visible = not settingsFrame.Visible
+-- SETTINGS
+local redBtn = makeBtn("Red Theme", settingsPage)
+redBtn.MouseButton1Click:Connect(function()
+	frame.BackgroundColor3 = Color3.fromRGB(170,60,60)
 end)
 
--- Toggle GUI with 0
+-- STATS
+local stat1 = Instance.new("TextLabel", statsPage)
+stat1.Size = UDim2.new(1,0,0,30)
+stat1.BackgroundTransparency = 1
+stat1.TextColor3 = Color3.new(1,1,1)
+
+local stat2 = stat1:Clone()
+stat2.Parent = statsPage
+
+local stat3 = stat1:Clone()
+stat3.Parent = statsPage
+
+RunService.RenderStepped:Connect(function()
+	stat1.Text = "Players: "..#Players:GetPlayers()
+	stat2.Text = "Place ID: "..game.PlaceId
+	stat3.Text = "Job ID: "..game.JobId
+end)
+
+-- DRAG FIX
+local dragging, dragStart, startPos
+
+frame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+	end
+end)
+
+UIS.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+		frame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+-- Toggle with 0
 UIS.InputBegan:Connect(function(input, gp)
 	if gp then return end
-	
 	if input.KeyCode == Enum.KeyCode.Zero then
 		frame.Visible = not frame.Visible
 	end
@@ -133,9 +203,9 @@ end)
 
 -- Speed
 speedBtn.MouseButton1Click:Connect(function()
-	speedBoost = not speedBoost
-	hum.WalkSpeed = speedBoost and 50 or 16
-	speedBtn.Text = speedBoost and "Speed: ON" or "Speed: OFF"
+	speedOn = not speedOn
+	hum.WalkSpeed = speedOn and 50 or 16
+	speedBtn.Text = speedOn and "Speed: ON" or "Speed: OFF"
 end)
 
 -- Noclip
@@ -154,48 +224,11 @@ RunService.Stepped:Connect(function()
 	end
 end)
 
--- Kill Aura
-killBtn.MouseButton1Click:Connect(function()
-	killAura = not killAura
-	killBtn.Text = killAura and "Kill Aura: ON" or "Kill Aura: OFF"
-end)
-
 -- Teleport
 tpBtn.MouseButton1Click:Connect(function()
-	tpMode = not tpMode
-	tpBtn.Text = tpMode and "Teleport: ON" or "Teleport: OFF"
-end)
-
-RunService.Stepped:Connect(function()
-	if killAura then
-		for _, p in pairs(game.Players:GetPlayers()) do
-			if p ~= player and p.Character and p.Character:FindFirstChild("Humanoid") then
-				local hrp = p.Character:FindFirstChild("HumanoidRootPart")
-				if hrp and (hrp.Position - root.Position).Magnitude < 5 then
-					p.Character.Humanoid.Health = 0
-				end
-			end
-		end
-	end
-
-	if tpMode then
-		local closest, dist = nil, math.huge
-		
-		for _, p in pairs(game.Players:GetPlayers()) do
-			if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-				local hrp = p.Character.HumanoidRootPart
-				local d = (hrp.Position - root.Position).Magnitude
-				
-				if d < dist then
-					dist = d
-					closest = hrp
-				end
-			end
-		end
-		
-		if closest then
-			root.CFrame = closest.CFrame * CFrame.new(0,3,0)
-		end
+	local spawn = workspace:FindFirstChildOfClass("SpawnLocation")
+	if spawn then
+		root.CFrame = spawn.CFrame + Vector3.new(0,5,0)
 	end
 end)
 
