@@ -125,8 +125,67 @@ local tpBtn = makeBtn("Teleport to Spawn", mainPage)
 
 -- SETTINGS
 local redBtn = makeBtn("Red Theme", settingsPage)
+
 redBtn.MouseButton1Click:Connect(function()
 	frame.BackgroundColor3 = Color3.fromRGB(170,60,60)
+end)
+
+-- WALK SPEED SLIDER (NEW)
+local sliderLabel = Instance.new("TextLabel", settingsPage)
+sliderLabel.Size = UDim2.new(1,0,0,25)
+sliderLabel.BackgroundTransparency = 1
+sliderLabel.TextColor3 = Color3.new(1,1,1)
+sliderLabel.Font = Enum.Font.Gotham
+sliderLabel.TextSize = 14
+sliderLabel.Text = "WalkSpeed: 16"
+
+local sliderFrame = Instance.new("Frame", settingsPage)
+sliderFrame.Size = UDim2.new(1,0,0,20)
+sliderFrame.BackgroundColor3 = Color3.fromRGB(60,60,60)
+
+Instance.new("UICorner", sliderFrame).CornerRadius = UDim.new(0,6)
+
+local fill = Instance.new("Frame", sliderFrame)
+fill.Size = UDim2.new(0,0,1,0)
+fill.BackgroundColor3 = Color3.fromRGB(100,200,100)
+
+Instance.new("UICorner", fill).CornerRadius = UDim.new(0,6)
+
+local draggingSlider = false
+local minSpeed = 16
+local maxSpeed = 250
+
+local function updateSlider(inputX)
+	local relativeX = math.clamp(
+		(inputX - sliderFrame.AbsolutePosition.X) / sliderFrame.AbsoluteSize.X,
+		0,
+		1
+	)
+
+	fill.Size = UDim2.new(relativeX, 0, 1, 0)
+
+	local speed = math.floor(minSpeed + (maxSpeed - minSpeed) * relativeX)
+	hum.WalkSpeed = speed
+	sliderLabel.Text = "WalkSpeed: "..speed
+end
+
+sliderFrame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingSlider = true
+		updateSlider(input.Position.X)
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if draggingSlider and input.UserInputType == Enum.UserInputType.MouseMovement then
+		updateSlider(input.Position.X)
+	end
+end)
+
+UIS.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingSlider = false
+	end
 end)
 
 -- STATS
@@ -147,7 +206,7 @@ RunService.RenderStepped:Connect(function()
 	stat3.Text = "Job ID: "..game.JobId
 end)
 
--- DRAG FIX
+-- DRAG
 local dragging, dragStart, startPos
 
 frame.InputBegan:Connect(function(input)
@@ -176,7 +235,7 @@ UIS.InputChanged:Connect(function(input)
 	end
 end)
 
--- Toggle with 0
+-- Toggle GUI
 UIS.InputBegan:Connect(function(input, gp)
 	if gp then return end
 	if input.KeyCode == Enum.KeyCode.Zero then
@@ -201,11 +260,14 @@ flyBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Speed
+-- Speed toggle (optional)
 speedBtn.MouseButton1Click:Connect(function()
 	speedOn = not speedOn
-	hum.WalkSpeed = speedOn and 50 or 16
 	speedBtn.Text = speedOn and "Speed: ON" or "Speed: OFF"
+	
+	if not speedOn then
+		hum.WalkSpeed = 16
+	end
 end)
 
 -- Noclip
@@ -263,3 +325,6 @@ RunService.RenderStepped:Connect(function()
 		bg.CFrame = cam.CFrame
 	end
 end)
+
+
+(KEEP IN MIND THAT ITS 50% TROLL HUB AND 50% OF ADMIN HUB, SO PLEASE DONT TAKE IT SERIOUSLY AS ONE)
