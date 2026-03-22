@@ -21,7 +21,6 @@ end)
 local flying, noclip = false, false
 local dir = Vector3.zero
 local bv, bg
-
 local flySpeed = 50
 
 local gui = Instance.new("ScreenGui")
@@ -33,7 +32,7 @@ local frame = Instance.new("Frame", gui)
 frame.Size = UDim2.new(0, 300, 0, 380)
 frame.Position = UDim2.new(0.5, -150, 0.5, -180)
 frame.BackgroundColor3 = Color3.fromRGB(35,35,35)
-frame.BackgroundTransparency = 0.6
+frame.BackgroundTransparency = 0.4
 frame.Active = true
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
 
@@ -50,9 +49,9 @@ tabFrame.Size = UDim2.new(1,0,0,30)
 tabFrame.Position = UDim2.new(0,0,0,35)
 tabFrame.BackgroundTransparency = 1
 
-local tabLayout = Instance.new("UIListLayout", tabFrame)
-tabLayout.FillDirection = Enum.FillDirection.Horizontal
-tabLayout.Padding = UDim.new(0,5)
+local layout = Instance.new("UIListLayout", tabFrame)
+layout.FillDirection = Enum.FillDirection.Horizontal
+layout.Padding = UDim.new(0,5)
 
 local function makeTab(name)
 	local b = Instance.new("TextButton")
