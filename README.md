@@ -4,14 +4,24 @@ local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 
+local char = player.Character or player.CharacterAdded:Wait()
+local hum = char:WaitForChild("Humanoid")
+local root = char:WaitForChild("HumanoidRootPart")
+
+player.CharacterAdded:Connect(function(c)
+	char = c
+	hum = c:WaitForChild("Humanoid")
+	root = c:WaitForChild("HumanoidRootPart")
+end)
+
 local gui = Instance.new("ScreenGui")
-gui.Name = "CleanHub"
+gui.Name = "AdminHub"
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 340, 0, 420)
-frame.Position = UDim2.new(0.5, -170, 0.5, -210)
+frame.Size = UDim2.new(0, 340, 0, 430)
+frame.Position = UDim2.new(0.5, -170, 0.5, -215)
 frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
 frame.BackgroundTransparency = 0.4
 frame.Active = true
@@ -55,7 +65,7 @@ end)
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1,0,0,30)
 title.BackgroundTransparency = 1
-title.Text = "Clean Hub"
+title.Text = "Admin Hub"
 title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
@@ -64,9 +74,9 @@ local tabFrame = Instance.new("Frame", frame)
 tabFrame.Size = UDim2.new(1,0,0,30)
 tabFrame.BackgroundTransparency = 1
 
-local tabLayout = Instance.new("UIListLayout", tabFrame)
-tabLayout.FillDirection = Enum.FillDirection.Horizontal
-tabLayout.Padding = UDim.new(0,5)
+local layoutTabs = Instance.new("UIListLayout", tabFrame)
+layoutTabs.FillDirection = Enum.FillDirection.Horizontal
+layoutTabs.Padding = UDim.new(0,5)
 
 local function makeTab(name)
 	local b = Instance.new("TextButton", tabFrame)
@@ -90,10 +100,10 @@ local function makePage()
 	f.Position = UDim2.new(0,0,0,70)
 	f.BackgroundTransparency = 1
 	f.Visible = false
-
+	
 	local l = Instance.new("UIListLayout", f)
 	l.Padding = UDim.new(0,5)
-
+	
 	return f
 end
 
@@ -126,6 +136,72 @@ local function makeBtn(text, parent)
 	return b
 end
 
+local flying, noclip, infiniteJump = false, false, false
+local flySpeed = 50
+
+local bv, bg
+
+local flyBtn = makeBtn("Fly: OFF", mainPage)
+local noclipBtn = makeBtn("Noclip: OFF", mainPage)
+local jumpBtn = makeBtn("Infinite Jump: OFF", mainPage)
+
+flyBtn.MouseButton1Click:Connect(function()
+	flying = not flying
+	flyBtn.Text = flying and "Fly: ON" or "Fly: OFF"
+
+	if flying then
+		bv = Instance.new("BodyVelocity", root)
+		bv.MaxForce = Vector3.new(1,1,1)*1e5
+
+		bg = Instance.new("BodyGyro", root)
+		bg.MaxTorque = Vector3.new(1,1,1)*1e5
+	else
+		if bv then bv:Destroy() end
+		if bg then bg:Destroy() end
+	end
+end)
+
+noclipBtn.MouseButton1Click:Connect(function()
+	noclip = not noclip
+	noclipBtn.Text = noclip and "Noclip: ON" or "Noclip: OFF"
+end)
+
+jumpBtn.MouseButton1Click:Connect(function()
+	infiniteJump = not infiniteJump
+	jumpBtn.Text = infiniteJump and "Infinite Jump: ON" or "Infinite Jump: OFF"
+end)
+
+UIS.JumpRequest:Connect(function()
+	if infiniteJump and hum then
+		hum:ChangeState(Enum.HumanoidStateType.Jumping)
+	end
+end)
+
+RunService.Stepped:Connect(function()
+	if noclip then
+		for _,v in pairs(char:GetDescendants()) do
+			if v:IsA("BasePart") then
+				v.CanCollide = false
+			end
+		end
+	end
+end)
+
+UIS.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.Keyboard then
+		if input.KeyCode == Enum.KeyCode.W then dir = Vector3.new(0,0,-1) end
+	end
+end)
+
+RunService.RenderStepped:Connect(function()
+	if flying and bv and bg then
+		local cam = workspace.CurrentCamera
+		local move = cam.CFrame.LookVector
+		bv.Velocity = move * flySpeed
+		bg.CFrame = cam.CFrame
+	end
+end)
+
 local function makeSlider(parent, name, min, max, default, callback)
 	local f = Instance.new("Frame", parent)
 	f.Size = UDim2.new(1,0,0,45)
@@ -135,8 +211,6 @@ local function makeSlider(parent, name, min, max, default, callback)
 	label.Size = UDim2.new(1,0,0,20)
 	label.BackgroundTransparency = 1
 	label.TextColor3 = Color3.new(1,1,1)
-	label.Font = Enum.Font.Gotham
-	label.TextSize = 14
 	label.Text = name..": "..default
 
 	local bar = Instance.new("Frame", f)
@@ -154,10 +228,10 @@ local function makeSlider(parent, name, min, max, default, callback)
 
 	local function update(x)
 		local rel = math.clamp((x - bar.AbsolutePosition.X)/bar.AbsoluteSize.X, 0,1)
+		local val = math.floor(min + (max-min)*rel)
 		fill.Size = UDim2.new(rel,0,1,0)
-		local value = math.floor(min + (max-min)*rel)
-		label.Text = name..": "..value
-		callback(value)
+		label.Text = name..": "..val
+		callback(val)
 	end
 
 	bar.InputBegan:Connect(function(input)
@@ -180,80 +254,23 @@ local function makeSlider(parent, name, min, max, default, callback)
 	end)
 end
 
-local function makeColorPicker(parent, callback)
-	local bar = Instance.new("Frame", parent)
-	bar.Size = UDim2.new(1,0,0,20)
-	bar.BackgroundTransparency = 1
-
-	local bg = Instance.new("Frame", bar)
-	bg.Size = UDim2.new(1,0,1,0)
-	bg.BackgroundColor3 = Color3.new(1,1,1)
-	Instance.new("UICorner", bg).CornerRadius = UDim.new(0,6)
-
-	local grad = Instance.new("UIGradient", bg)
-	grad.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(255,0,0)),
-		ColorSequenceKeypoint.new(0.2, Color3.fromRGB(255,255,0)),
-		ColorSequenceKeypoint.new(0.4, Color3.fromRGB(0,255,0)),
-		ColorSequenceKeypoint.new(0.6, Color3.fromRGB(0,255,255)),
-		ColorSequenceKeypoint.new(0.8, Color3.fromRGB(0,0,255)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(255,0,255))
-	})
-
-	local dragging = false
-
-	local function update(x)
-		local rel = math.clamp((x - bg.AbsolutePosition.X)/bg.AbsoluteSize.X, 0,1)
-		local c = grad.Color.Keypoints[math.floor(rel * (#grad.Color.Keypoints - 1)) + 1].Value
-		callback(c)
-	end
-
-	bg.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = true
-			update(input.Position.X)
-		end
-	end)
-
-	UIS.InputChanged:Connect(function(input)
-		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-			update(input.Position.X)
-		end
-	end)
-
-	UIS.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = false
-		end
-	end)
-end
-
-makeBtn("Example Button", mainPage)
-
 makeSlider(mainPage, "WalkSpeed", 16, 250, 16, function(v)
-	local char = player.Character
-	if char and char:FindFirstChild("Humanoid") then
-		char.Humanoid.WalkSpeed = v
-	end
+	if hum then hum.WalkSpeed = v end
 end)
 
-makeColorPicker(settingsPage, function(color)
-	frame.BackgroundColor3 = color
+makeSlider(mainPage, "FlySpeed", 16, 250, 50, function(v)
+	flySpeed = v
 end)
 
 local stat1 = Instance.new("TextLabel", statsPage)
 stat1.Size = UDim2.new(1,0,0,25)
 stat1.BackgroundTransparency = 1
 stat1.TextColor3 = Color3.new(1,1,1)
-stat1.Font = Enum.Font.Gotham
-stat1.TextSize = 14
 
 local stat2 = Instance.new("TextLabel", statsPage)
 stat2.Size = UDim2.new(1,0,0,25)
 stat2.BackgroundTransparency = 1
 stat2.TextColor3 = Color3.new(1,1,1)
-stat2.Font = Enum.Font.Gotham
-stat2.TextSize = 14
 
 RunService.RenderStepped:Connect(function()
 	stat1.Text = "Players: "..#Players:GetPlayers()
