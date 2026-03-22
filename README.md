@@ -15,13 +15,13 @@ player.CharacterAdded:Connect(function(c)
 end)
 
 local gui = Instance.new("ScreenGui")
-gui.Name = "AdminHub"
+gui.Name = "CleanHub"
 gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 340, 0, 430)
-frame.Position = UDim2.new(0.5, -170, 0.5, -215)
+frame.Size = UDim2.new(0, 340, 0, 420)
+frame.Position = UDim2.new(0.5, -170, 0.5, -210)
 frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
 frame.BackgroundTransparency = 0.4
 frame.Active = true
@@ -65,7 +65,7 @@ end)
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1,0,0,30)
 title.BackgroundTransparency = 1
-title.Text = "Admin Hub"
+title.Text = "Clean Hub"
 title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
@@ -74,9 +74,9 @@ local tabFrame = Instance.new("Frame", frame)
 tabFrame.Size = UDim2.new(1,0,0,30)
 tabFrame.BackgroundTransparency = 1
 
-local layoutTabs = Instance.new("UIListLayout", tabFrame)
-layoutTabs.FillDirection = Enum.FillDirection.Horizontal
-layoutTabs.Padding = UDim.new(0,5)
+local tabLayout = Instance.new("UIListLayout", tabFrame)
+tabLayout.FillDirection = Enum.FillDirection.Horizontal
+tabLayout.Padding = UDim.new(0,5)
 
 local function makeTab(name)
 	local b = Instance.new("TextButton", tabFrame)
@@ -100,10 +100,10 @@ local function makePage()
 	f.Position = UDim2.new(0,0,0,70)
 	f.BackgroundTransparency = 1
 	f.Visible = false
-	
+
 	local l = Instance.new("UIListLayout", f)
 	l.Padding = UDim.new(0,5)
-	
+
 	return f
 end
 
@@ -124,7 +124,7 @@ statsTab.MouseButton1Click:Connect(function() show(statsPage) end)
 
 show(mainPage)
 
-local function makeBtn(text, parent)
+local function makeBtn(parent, text)
 	local b = Instance.new("TextButton", parent)
 	b.Size = UDim2.new(1,0,0,30)
 	b.Text = text
@@ -136,14 +136,20 @@ local function makeBtn(text, parent)
 	return b
 end
 
+local container = Instance.new("Frame", mainPage)
+container.Size = UDim2.new(1,0,0,110)
+container.BackgroundTransparency = 1
+
+local list = Instance.new("UIListLayout", container)
+list.Padding = UDim.new(0,5)
+
+local flyBtn = makeBtn(container, "Fly: OFF")
+local noclipBtn = makeBtn(container, "Noclip: OFF")
+local jumpBtn = makeBtn(container, "Infinite Jump: OFF")
+
 local flying, noclip, infiniteJump = false, false, false
 local flySpeed = 50
-
 local bv, bg
-
-local flyBtn = makeBtn("Fly: OFF", mainPage)
-local noclipBtn = makeBtn("Noclip: OFF", mainPage)
-local jumpBtn = makeBtn("Infinite Jump: OFF", mainPage)
 
 flyBtn.MouseButton1Click:Connect(function()
 	flying = not flying
@@ -172,7 +178,7 @@ jumpBtn.MouseButton1Click:Connect(function()
 end)
 
 UIS.JumpRequest:Connect(function()
-	if infiniteJump and hum then
+	if infiniteJump then
 		hum:ChangeState(Enum.HumanoidStateType.Jumping)
 	end
 end)
@@ -184,12 +190,6 @@ RunService.Stepped:Connect(function()
 				v.CanCollide = false
 			end
 		end
-	end
-end)
-
-UIS.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.Keyboard then
-		if input.KeyCode == Enum.KeyCode.W then dir = Vector3.new(0,0,-1) end
 	end
 end)
 
