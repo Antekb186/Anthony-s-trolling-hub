@@ -22,8 +22,16 @@ frame.Position = UDim2.new(0.5, -210, 0.5, -150)
 frame.BackgroundColor3 = Color3.fromRGB(35,35,35)
 frame.BackgroundTransparency = 0.4
 frame.Active = true
+frame.Draggable = true
 
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0,6)
+
+UIS.InputBegan:Connect(function(i, gp)
+	if gp then return end
+	if i.KeyCode == Enum.KeyCode.Zero then
+		gui.Enabled = not gui.Enabled
+	end
+end)
 
 local top = Instance.new("Frame", frame)
 top.Size = UDim2.new(1,0,0,35)
@@ -53,10 +61,8 @@ local function page()
 	f.Position = UDim2.new(0,0,0,35)
 	f.BackgroundTransparency = 1
 	f.Visible = false
-
 	local l = Instance.new("UIListLayout", f)
 	l.Padding = UDim.new(0,5)
-
 	return f
 end
 
@@ -193,7 +199,6 @@ local function slider(parent, text, min, max, default, callback)
 		if dragging then
 			local rel = math.clamp((i.Position.X - bar.AbsolutePosition.X)/bar.AbsoluteSize.X,0,1)
 			local val = math.floor(min + (max-min)*rel)
-
 			fill.Size = UDim2.new(rel,0,1,0)
 			label.Text = text..": "..val
 			callback(val)
@@ -218,25 +223,47 @@ local function rgbPicker(parent)
 	local input = Instance.new("TextBox", parent)
 	input.Size = UDim2.new(1,0,0,25)
 	input.PlaceholderText = "HEX (#RRGGBB)"
-	input.Text = ""
 	input.BackgroundColor3 = Color3.fromRGB(50,50,50)
 	input.TextColor3 = Color3.new(1,1,1)
 
-	wheel.MouseButton1Down:Connect(function(x,y)
+	wheel.MouseButton1Down:Connect(function(x)
 		local rel = (x - wheel.AbsolutePosition.X)/wheel.AbsoluteSize.X
-		local color = Color3.fromHSV(math.clamp(rel,0,1),1,1)
-		frame.BackgroundColor3 = color
+		frame.BackgroundColor3 = Color3.fromHSV(math.clamp(rel,0,1),1,1)
 	end)
 
 	input.FocusLost:Connect(function()
 		local hex = input.Text:gsub("#","")
 		if #hex == 6 then
-			local r = tonumber(hex:sub(1,2),16)/255
-			local g = tonumber(hex:sub(3,4),16)/255
-			local b = tonumber(hex:sub(5,6),16)/255
-			frame.BackgroundColor3 = Color3.new(r,g,b)
+			frame.BackgroundColor3 = Color3.fromRGB(
+				tonumber(hex:sub(1,2),16),
+				tonumber(hex:sub(3,4),16),
+				tonumber(hex:sub(5,6),16)
+			)
 		end
 	end)
 end
 
 rgbPicker(settings)
+
+local playerCount = Instance.new("TextLabel", stats)
+playerCount.Size = UDim2.new(1,0,0,30)
+playerCount.BackgroundTransparency = 1
+playerCount.TextColor3 = Color3.new(1,1,1)
+playerCount.Font = Enum.Font.Gotham
+playerCount.TextSize = 14
+
+local jobId = Instance.new("TextLabel", stats)
+jobId.Size = UDim2.new(1,0,0,30)
+jobId.BackgroundTransparency = 1
+jobId.TextColor3 = Color3.new(1,1,1)
+jobId.Font = Enum.Font.Gotham
+jobId.TextSize = 14
+jobId.Text = "JobId: "..game.JobId
+
+local function updatePlayers()
+	playerCount.Text = "Players: "..#Players:GetPlayers()
+end
+
+updatePlayers()
+Players.PlayerAdded:Connect(updatePlayers)
+Players.PlayerRemoving:Connect(updatePlayers)
