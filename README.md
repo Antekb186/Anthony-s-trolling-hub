@@ -4,7 +4,6 @@ local RunService = game:GetService("RunService")
 
 local player = Players.LocalPlayer
 
--- Wait for character safely
 local function getChar()
 	return player.Character or player.CharacterAdded:Wait()
 end
@@ -13,16 +12,12 @@ local char = getChar()
 local hum = char:WaitForChild("Humanoid")
 local root = char:WaitForChild("HumanoidRootPart")
 
--- Re-fetch on respawn
 player.CharacterAdded:Connect(function(c)
 	char = c
 	hum = c:WaitForChild("Humanoid")
 	root = c:WaitForChild("HumanoidRootPart")
 end)
 
-------------------------------------------------
--- GUI SETUP
-------------------------------------------------
 local gui = Instance.new("ScreenGui")
 gui.Name = "AdminHub"
 gui.ResetOnSpawn = false
@@ -33,12 +28,8 @@ frame.Size = UDim2.new(0, 300, 0, 360)
 frame.Position = UDim2.new(0.5, -150, 0.5, -180)
 frame.BackgroundColor3 = Color3.fromRGB(35,35,35)
 frame.Active = true
-
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
 
-------------------------------------------------
--- TITLE
-------------------------------------------------
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1,0,0,30)
 title.BackgroundTransparency = 1
@@ -47,17 +38,14 @@ title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
 
-------------------------------------------------
--- TABS
-------------------------------------------------
 local tabFrame = Instance.new("Frame", frame)
 tabFrame.Size = UDim2.new(1,0,0,30)
 tabFrame.Position = UDim2.new(0,0,0,35)
 tabFrame.BackgroundTransparency = 1
 
-local tabLayout = Instance.new("UIListLayout", tabFrame)
-tabLayout.FillDirection = Enum.FillDirection.Horizontal
-tabLayout.Padding = UDim.new(0,5)
+local layout = Instance.new("UIListLayout", tabFrame)
+layout.FillDirection = Enum.FillDirection.Horizontal
+layout.Padding = UDim.new(0,5)
 
 local function makeTab(name)
 	local b = Instance.new("TextButton")
@@ -76,9 +64,6 @@ local mainTab = makeTab("Main")
 local settingsTab = makeTab("Settings")
 local statsTab = makeTab("Stats")
 
-------------------------------------------------
--- PAGES
-------------------------------------------------
 local function makePage()
 	local f = Instance.new("Frame", frame)
 	f.Size = UDim2.new(1,0,1,-70)
@@ -109,9 +94,6 @@ statsTab.MouseButton1Click:Connect(function() show(statsPage) end)
 
 show(mainPage)
 
-------------------------------------------------
--- BUTTON FUNCTION
-------------------------------------------------
 local function makeBtn(text, parent)
 	local b = Instance.new("TextButton", parent)
 	b.Size = UDim2.new(1,0,0,30)
@@ -124,12 +106,6 @@ local function makeBtn(text, parent)
 	return b
 end
 
-------------------------------------------------
--- MAIN BUTTONS
-------------------------------------------------
-makeBtn("Fly (placeholder)", mainPage)
-makeBtn("Noclip (placeholder)", mainPage)
-
 local tpBtn = makeBtn("Teleport to Spawn", mainPage)
 
 tpBtn.MouseButton1Click:Connect(function()
@@ -139,9 +115,6 @@ tpBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
-------------------------------------------------
--- WALK SPEED SLIDER (CLEAN)
-------------------------------------------------
 local sliderLabel = Instance.new("TextLabel", settingsPage)
 sliderLabel.Size = UDim2.new(1,0,0,25)
 sliderLabel.BackgroundTransparency = 1
@@ -164,17 +137,11 @@ local dragging = false
 local minSpeed, maxSpeed = 16, 250
 
 local function update(x)
-	local rel = math.clamp(
-		(x - slider.AbsolutePosition.X) / slider.AbsoluteSize.X,
-		0, 1
-	)
-
+	local rel = math.clamp((x - slider.AbsolutePosition.X) / slider.AbsoluteSize.X, 0, 1)
 	fill.Size = UDim2.new(rel,0,1,0)
 
 	local speed = math.floor(minSpeed + (maxSpeed - minSpeed) * rel)
-	if hum then
-		hum.WalkSpeed = speed
-	end
+	if hum then hum.WalkSpeed = speed end
 
 	sliderLabel.Text = "WalkSpeed: "..speed
 end
@@ -198,9 +165,6 @@ UIS.InputEnded:Connect(function(input)
 	end
 end)
 
-------------------------------------------------
--- STATS
-------------------------------------------------
 local stats = Instance.new("TextLabel", statsPage)
 stats.Size = UDim2.new(1,0,0,30)
 stats.BackgroundTransparency = 1
@@ -212,9 +176,6 @@ RunService.RenderStepped:Connect(function()
 	stats.Text = "Players: "..#Players:GetPlayers()
 end)
 
-------------------------------------------------
--- DRAG UI
-------------------------------------------------
 local draggingFrame, dragStart, startPos
 
 frame.InputBegan:Connect(function(input)
@@ -243,9 +204,6 @@ UIS.InputChanged:Connect(function(input)
 	end
 end)
 
-------------------------------------------------
--- TOGGLE UI (KEY: 0)
-------------------------------------------------
 UIS.InputBegan:Connect(function(input, gp)
 	if gp then return end
 	if input.KeyCode == Enum.KeyCode.Zero then
