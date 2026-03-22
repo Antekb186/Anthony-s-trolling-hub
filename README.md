@@ -18,7 +18,7 @@ player.CharacterAdded:Connect(function(c)
 	root = c:WaitForChild("HumanoidRootPart")
 end)
 
-local flying, noclip = false, false
+local flying, noclip, infJump = false, false, false
 local dir = Vector3.zero
 local bv, bg
 local flySpeed = 50
@@ -36,7 +36,6 @@ frame.BackgroundTransparency = 0.4
 frame.Active = true
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
 
--- DRAG
 local dragging, dragStart, startPos
 
 frame.InputBegan:Connect(function(input)
@@ -65,7 +64,6 @@ UIS.InputChanged:Connect(function(input)
 	end
 end)
 
--- TOGGLE UI
 UIS.InputBegan:Connect(function(input, gp)
 	if gp then return end
 	if input.KeyCode == Enum.KeyCode.Zero then
@@ -73,7 +71,6 @@ UIS.InputBegan:Connect(function(input, gp)
 	end
 end)
 
--- TITLE
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1,0,0,30)
 title.BackgroundTransparency = 1
@@ -82,7 +79,6 @@ title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
 
--- BUTTON
 local function makeBtn(text, parent)
 	local b = Instance.new("TextButton", parent)
 	b.Size = UDim2.new(1,0,0,30)
@@ -97,8 +93,8 @@ end
 
 local flyBtn = makeBtn("Fly: OFF", frame)
 local noclipBtn = makeBtn("Noclip: OFF", frame)
+local infJumpBtn = makeBtn("Infinite Jump: OFF", frame)
 
--- SLIDER
 local function createSlider(parent, name, min, max, default, callback)
 	local label = Instance.new("TextLabel", parent)
 	label.Size = UDim2.new(1,0,0,20)
@@ -155,7 +151,6 @@ createSlider(frame, "Fly Speed", 16, 250, 50, function(v)
 	flySpeed = v
 end)
 
--- FLY
 flyBtn.MouseButton1Click:Connect(function()
 	flying = not flying
 	flyBtn.Text = flying and "Fly: ON" or "Fly: OFF"
@@ -172,10 +167,14 @@ flyBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
--- NOCLIP
 noclipBtn.MouseButton1Click:Connect(function()
 	noclip = not noclip
 	noclipBtn.Text = noclip and "Noclip: ON" or "Noclip: OFF"
+end)
+
+infJumpBtn.MouseButton1Click:Connect(function()
+	infJump = not infJump
+	infJumpBtn.Text = infJump and "Infinite Jump: ON" or "Infinite Jump: OFF"
 end)
 
 RunService.Stepped:Connect(function()
@@ -188,7 +187,6 @@ RunService.Stepped:Connect(function()
 	end
 end)
 
--- MOVEMENT
 UIS.InputBegan:Connect(function(input)
 	local k = input.KeyCode.Name
 	if k == "W" then dir += Vector3.new(0,0,-1)
@@ -220,9 +218,8 @@ RunService.RenderStepped:Connect(function()
 	end
 end)
 
--- INFINITE JUMP
 UIS.JumpRequest:Connect(function()
-	if hum then
+	if infJump and hum then
 		hum:ChangeState(Enum.HumanoidStateType.Jumping)
 	end
 end)
