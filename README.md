@@ -36,10 +36,8 @@ frame.BackgroundTransparency = 0.4
 frame.Active = true
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
 
--- DRAG (clean + fixed)
-local dragging = false
-local dragStart
-local startPos
+-- DRAG
+local dragging, dragStart, startPos
 
 frame.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -84,61 +82,6 @@ title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
 
--- TAB SYSTEM
-local tabFrame = Instance.new("Frame", frame)
-tabFrame.Size = UDim2.new(1,0,0,30)
-tabFrame.Position = UDim2.new(0,0,0,35)
-tabFrame.BackgroundTransparency = 1
-
-local layout = Instance.new("UIListLayout", tabFrame)
-layout.FillDirection = Enum.FillDirection.Horizontal
-layout.Padding = UDim.new(0,5)
-
-local function makeTab(name)
-	local b = Instance.new("TextButton")
-	b.Size = UDim2.new(0.33,0,1,0)
-	b.Text = name
-	b.BackgroundColor3 = Color3.fromRGB(60,60,60)
-	b.TextColor3 = Color3.new(1,1,1)
-	b.Font = Enum.Font.Gotham
-	b.TextSize = 14
-	Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
-	b.Parent = tabFrame
-	return b
-end
-
-local mainTab = makeTab("Main")
-local settingsTab = makeTab("Settings")
-local statsTab = makeTab("Stats")
-
-local function makePage()
-	local f = Instance.new("Frame", frame)
-	f.Size = UDim2.new(1,0,1,-70)
-	f.Position = UDim2.new(0,0,0,70)
-	f.BackgroundTransparency = 1
-	f.Visible = false
-	local l = Instance.new("UIListLayout", f)
-	l.Padding = UDim.new(0,6)
-	return f
-end
-
-local mainPage = makePage()
-local settingsPage = makePage()
-local statsPage = makePage()
-
-local function show(page)
-	mainPage.Visible = false
-	settingsPage.Visible = false
-	statsPage.Visible = false
-	page.Visible = true
-end
-
-mainTab.MouseButton1Click:Connect(function() show(mainPage) end)
-settingsTab.MouseButton1Click:Connect(function() show(settingsPage) end)
-statsTab.MouseButton1Click:Connect(function() show(statsPage) end)
-
-show(mainPage)
-
 -- BUTTON
 local function makeBtn(text, parent)
 	local b = Instance.new("TextButton", parent)
@@ -152,17 +95,15 @@ local function makeBtn(text, parent)
 	return b
 end
 
-local flyBtn = makeBtn("Fly: OFF", mainPage)
-local noclipBtn = makeBtn("Noclip: OFF", mainPage)
+local flyBtn = makeBtn("Fly: OFF", frame)
+local noclipBtn = makeBtn("Noclip: OFF", frame)
 
--- SLIDER SYSTEM
+-- SLIDER
 local function createSlider(parent, name, min, max, default, callback)
 	local label = Instance.new("TextLabel", parent)
 	label.Size = UDim2.new(1,0,0,20)
 	label.BackgroundTransparency = 1
 	label.TextColor3 = Color3.new(1,1,1)
-	label.Font = Enum.Font.Gotham
-	label.TextSize = 14
 	label.Text = name..": "..default
 
 	local bar = Instance.new("Frame", parent)
@@ -206,24 +147,12 @@ local function createSlider(parent, name, min, max, default, callback)
 	end)
 end
 
-createSlider(settingsPage, "WalkSpeed", 16, 250, 16, function(v)
+createSlider(frame, "WalkSpeed", 16, 250, 16, function(v)
 	if hum then hum.WalkSpeed = v end
 end)
 
-createSlider(settingsPage, "Fly Speed", 16, 250, 50, function(v)
+createSlider(frame, "Fly Speed", 16, 250, 50, function(v)
 	flySpeed = v
-end)
-
--- STATS
-local stats = Instance.new("TextLabel", statsPage)
-stats.Size = UDim2.new(1,0,0,30)
-stats.BackgroundTransparency = 1
-stats.TextColor3 = Color3.new(1,1,1)
-stats.Font = Enum.Font.Gotham
-stats.TextSize = 14
-
-RunService.RenderStepped:Connect(function()
-	stats.Text = "Players: "..#Players:GetPlayers()
 end)
 
 -- FLY
@@ -288,6 +217,13 @@ RunService.RenderStepped:Connect(function()
 		local move = cam.CFrame:VectorToWorldSpace(dir)
 		bv.Velocity = move * flySpeed
 		bg.CFrame = cam.CFrame
+	end
+end)
+
+-- INFINITE JUMP
+UIS.JumpRequest:Connect(function()
+	if hum then
+		hum:ChangeState(Enum.HumanoidStateType.Jumping)
 	end
 end)
 
